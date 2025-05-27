@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"math"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -17,8 +19,17 @@ import (
 var monolithHost = getEnv("MONOLITH_URL", "")
 var moviesServiceHost = getEnv("MOVIES_SERVICE_URL", "")
 var eventsServiceHost = getEnv("EVENTS_SERVICE_URL", "")
+var moviesMigrationPercentEnv = getEnv("MOVIES_MIGRATION_PERCENT", "0")
+var moviesMigrationPercent int
+var moviesRequestCount int
 
 func main() {
+
+	intValue, err := strconv.Atoi(moviesMigrationPercentEnv)
+	moviesMigrationPercent = intValue
+	if err != nil {
+		moviesMigrationPercent = 0
+	}
 
 	http.HandleFunc("/health", func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Content-Type", "application/json")
@@ -79,7 +90,14 @@ func lookupTargetURL(path string) string {
 		if parts[0] == "api" {
 
 			if parts[1] == "movies" {
-				targetURL = moviesServiceHost + path
+				moviesRequestCount++
+
+				if shouldRouteToMoviesService(moviesRequestCount) {
+					targetURL = moviesServiceHost + path
+				} else {
+					targetURL = monolithHost + path
+				}
+
 			}
 
 			if parts[1] == "users" {
@@ -89,6 +107,22 @@ func lookupTargetURL(path string) string {
 	}
 
 	return targetURL
+}
+
+func shouldRouteToMoviesService(counter int) bool {
+
+	if moviesMigrationPercent == 0 {
+		return false
+	}
+
+	if moviesMigrationPercent == 100 {
+		return true
+	}
+
+	if counter%(int(math.Round(100/float64(moviesMigrationPercent)))) < 1 {
+		return true
+	}
+	return false
 }
 
 func proxy(targetURL string, res http.ResponseWriter, req *http.Request) {

@@ -159,6 +159,7 @@ func createPaymentEvent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	paymentEventToSend, err := json.Marshal(paymentEvent)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"internal error": err.Error()})
