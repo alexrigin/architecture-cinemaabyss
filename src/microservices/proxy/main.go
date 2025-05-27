@@ -100,7 +100,7 @@ func lookupTargetURL(path string) string {
 
 			}
 
-			if parts[1] == "users" {
+			if parts[1] == "users" || parts[1] == "payments" || parts[1] == "subscriptions" {
 				targetURL = monolithHost + path
 			}
 		}
