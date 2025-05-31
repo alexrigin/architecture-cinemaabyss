@@ -1,11 +1,38 @@
 ## Изучите [README.md](.\README.md) файл и структуру проекта.
 
+# Результаты
+Продублировал нужные диаграммы и скриншоты в данном разделе
+
+### Задание 1
+![CinemaAbyss_Container](diagrams/container/cinema_abyss_container_tobe.png)
+
+### Задание 2
+Скриншот тестов:
+![tests_screenshot](screenshots/tests_screenshot.jpg)
+
+Скриншот состояния топиков:
+![topics_screenshot](screenshots/topics_screenshot.jpg)
+
+### Задание 3
+Скриншот логов event-service:
+![events_logs_screenshot](screenshots/events_logs_screenshot.jpg)
+
+Скриншот вывода метода:
+![events_logs_screenshot](screenshots/curl_movies_screenshot.jpg)
+
+----
+
+
+
+
 # Задание 1
 
 1. Спроектируйте to be архитектуру КиноБездны, разделив всю систему на отдельные домены и организовав интеграционное взаимодействие и единую точку вызова сервисов.
 Результат представьте в виде контейнерной диаграммы в нотации С4.
 Добавьте ссылку на файл в этот шаблон
-[ссылка на файл](ссылка)
+
+![CinemaAbyss_Container](diagrams/container/cinema_abyss_container_tobe.png)
+
 
 # Задание 2
 
@@ -58,6 +85,13 @@
 
 Необходимые тесты для проверки этого API вызываются при запуске npm run test:local из папки tests/postman 
 Приложите скриншот тестов и скриншот состояния топиков Kafka из UI http://localhost:8090 
+
+Скриншот тестов:
+![tests_screenshot](screenshots/tests_screenshot.jpg)
+
+Скриншот состояния топиков:
+![topics_screenshot](screenshots/topics_screenshot.jpg)
+
 
 # Задание 3
 
@@ -269,6 +303,12 @@ cat .docker/config.json | base64
   ```
   Часть тестов с health-чек упадет, но создание событий отработает.
   Откройте логи event-service и сделайте скриншот обработки событий
+
+Скриншот логов event-service:
+![events_logs_screenshot](screenshots/events_logs_screenshot.jpg)
+
+Скриншот вызова метода:
+![events_logs_screenshot](screenshots/curl_movies_screenshot.jpg)
 
 #### Шаг 3
 Добавьте сюда скриншота вывода при вызове https://cinemaabyss.example.com/api/movies и  скриншот вывода event-service после вызова тестов.

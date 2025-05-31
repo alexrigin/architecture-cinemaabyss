@@ -2,7 +2,7 @@
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-title Container Diagram for SmartHome system
+title Container Diagram for CinemaAbyss system
 
 AddElementTag("microService", $shape=EightSidedShape(), $bgColor="CornflowerBlue", $fontColor="white", $legendText="micro service\neight sided")
 AddElementTag("storage", $shape=RoundedBoxShape(), $bgColor="lightSkyBlue", $fontColor="white")
@@ -11,10 +11,13 @@ AddRelTag("Devices input/output", $textColor="brown", $lineColor="brown", $lineS
 
 SHOW_PERSON_OUTLINE()
 
-Person(user, User/Admin, "Пользователь умного дома")
+Person(user, User, "Пользователь")
 
-System_Boundary(c1, "SmartHome") {
-    Container(web_app, "Web-App", "Javascript, ReactJS", "Веб-приложение для управления умным домом")
+System_Boundary(c1, "CinemaAbyss") {
+
+    Container(web_app, "Web-App", "Javascript, ReactJS", "Веб-приложение")
+    Container(mob_app, "Mob-App", "Android/IOS, java, Swift", "Мобильное приложение")
+    Container(tv_app, "TV-App", "Android, java", "Приложение на TV")
 
     Container(api_gateway, "ApiGateway", "Go", "Шлюз, отвечающий за балансировку, аутентификацию и маршрутизацию")
 
@@ -22,67 +25,65 @@ System_Boundary(c1, "SmartHome") {
 
     Container(users_service, "Users Service", "Go", "Регистрация пользователей, управление ролями", $tags = "microService")
     ContainerDb(users_db, "Users DB", "PostgreSQL", "", $tags = "storage")
+    Rel_R(users_service, users_db, "read/write", "pq")
 
-    Container(device_management_service, "DeviceManagement Service", "Go", "- Регистрация и управление устройствами\nХранение метаданных устройств", $tags = "microService")
-    ContainerDb(devices_db, "Devices DB", "PostgreSQL", "", $tags = "storage")
+    Container(loaylty_service, "Loaylty Service", "Go", "- Скидки, бонусы, подарки", $tags = "microService")
+    ContainerDb(loaylty_db, "Loaylty DB", "PostgreSQL", "", $tags = "storage")
+    Rel_L(loaylty_service, loaylty_db, "read/write", "pq")
 
-    Container(automation_service, "Automation Service", "Go", "- Создание пользовательских сценариев\n- Запуск сценариев по времени, триггерам или вручную", $tags = "microService")
-    ContainerDb(automation_db, "Automation DB", "PostgreSQL", "", $tags = "storage")
+    Container(subscriptions_service, "Subscriptions Service", "Go", "- Управление подписками", $tags = "microService")
+    ContainerDb(subscriptions_db, "Subscriptions DB", "PostgreSQL", "", $tags = "storage")
+    Rel(subscriptions_service, subscriptions_db, "read/write", "pq")
 
-    Container(video_service, "Video Service", "Go", "- Запись и хранение видео с камер видеонаблюдения\n- детекция событий", $tags = "microService")
-    ContainerDb(video_db, "Video DB", "PostgreSQL", "", $tags = "storage")
-    ContainerDb(video_storage, "Videos", "local/cloud storage", "", $tags = "storage")
+    Container(payments_service, "Payments Service", "Go", "- Управление платежами", $tags = "microService")
+    ContainerDb(payments_db, "Payments DB", "PostgreSQL", "", $tags = "storage")
+    Rel(payments_service, payments_db, "read/write", "pq")
 
-    Container(telemetry_service, "Telemetry Service", "Go", "Сбор данных с устройств (температура, энергопотребление, статус и т.д.)", $tags = "microService")
-    ContainerDb(telemetry_db, "Telemetry DB", "ClickHouse", "", $tags = "storage")
-    ContainerQueue(kafka, "kafka", "kafka")
-    ContainerQueue(mqtt, "MQTT", "MQTT")
+    Container(movies_service, "Movies Service", "Go", "- Метаданные о фильмах (жанры, актеры, оценки)", $tags = "microService")
+    ContainerDb(movies_db, "Movies DB", "PostgreSQL", "", $tags = "storage")
+    Rel(movies_service, movies_db, "read/write", "pq")
+
+    Container(analytics_service, "Analytics Service", "Go", "- Сбор данных о действиях пользователя", $tags = "microService")
+    ContainerDb(analytics_db, "Analytics DB", "ClickHouse", "", $tags = "storage")
+    Rel_R(analytics_service, analytics_db, "read/write", "pq")
+
+    ContainerQueue(rabbit, "RabbitMQ", "")
+    ContainerQueue(kafka, "kafka", "")
 }
 
-Boundary(c2, "Устройства") {
-    Container_Ext(gate, "Устройство открытия/закрытия ворот")
-    Container_Ext(light, "Свет")
-    Container_Ext(camera, "Камера")
-    Container_Ext(heating_system, "Система отопления")
-    Container_Ext(temperature_sensor, "Датчик температуры")
-}
+Container_Ext(payment_system, "Внешняя платежная система")
+Container_Ext(cinema_platform, "Онлайн-кинотеатры")
+Container_Ext(recommender_system, "Рекомендательная система")
 
-Rel_D(user, web_app, "Взаимодействует с сайтом", "HTTPS, WebBrowser")
+
+Rel_D(user, web_app, "Использует")
+Rel_D(user, mob_app, "Использует")
+Rel_D(user, tv_app, "Использует")
+
 Rel_D(web_app, api_gateway, "Отправляет запрос в платформу", "JSON/HTTPS")
+Rel_D(mob_app, api_gateway, "Отправляет запрос в платформу", "JSON/HTTPS")
+Rel_D(tv_app, api_gateway, "Отправляет запрос в платформу", "JSON/HTTPS")
 
-'Rel_R(api_gateway, auth_service, "-получение токена\n-валидация токена", "JSON/HTTPS")
 Rel_R(api_gateway, users_service, "Регистрация/обновление, получение информации", "JSON/HTTPS")
-Rel(api_gateway, automation_service, "Uses", "JSON/HTTPS")
-Rel(api_gateway, device_management_service, "Uses", "JSON/HTTPS")
-Rel(api_gateway, telemetry_service, "Uses", "JSON/HTTPS")
-Rel(api_gateway, video_service, "Uses", "JSON/HTTPS")
-'Rel_R(auth_service, users_service, "Проверка пользователя/кредов", "JSON/HTTPS")
-Rel_R(users_service, users_db, "read/write", "pq")
-Rel_D(device_management_service, devices_db, "read/write", "pq")
-Rel(automation_service, automation_db, "read/write", "pq")
-Rel(telemetry_service, telemetry_db, "read/write")
-Rel(video_service, video_db, "read/write", "pq")
-Rel(video_service, video_storage, "read/write", "")
+Rel_L(api_gateway, loaylty_service, "Получение информации о скидках", "JSON/HTTPS")
+Rel(api_gateway, payments_service, "Оплата", "JSON/HTTPS")
+Rel(api_gateway, subscriptions_service, "Получение информации о подписках", "JSON/HTTPS")
 
-Rel(device_management_service, kafka, "информация по устройствам", "", $tags = "Kafka events")
-Rel(kafka, automation_service, ".", "", $tags = "Kafka events")
-Rel(kafka, video_service, ".", "", $tags = "Kafka events")
+BiRel_U(payments_service, loaylty_service, "Проверка скидок", "JSON/HTTPS")
+BiRel_R(payments_service, subscriptions_service, "проверка/обновление подписок", "JSON/HTTPS")
+Rel_L(payments_service, payment_system, "uses", "JSON/HTTPS")
 
-Rel(mqtt, telemetry_service, "телеметрия", $tags = "Devices input/output")
-Rel(device_management_service, mqtt, "запросы/команды на устройства", $tags = "Devices input/output")
-Rel(mqtt, automation_service, "события для сценариев", $tags = "Devices input/output")
+Rel(api_gateway, movies_service, " ", "JSON/HTTPS")
+Rel_L(movies_service, subscriptions_service, "Проверка подписок", "JSON/HTTPS")
+Rel(movies_service, cinema_platform, " ", "JSON/HTTPS")
 
-BiRel(camera, video_service, "стриминг видео", "http(s)", $tags = "Devices input/output")
-BiRel(mqtt, light, "команда на включение/выключение", $tags = "Devices input/output")
-BiRel(mqtt, gate, "команда на открытие/закрытие", $tags = "Devices input/output")
-BiRel(mqtt, heating_system, "команда на изменение температуры", $tags = "Devices input/output")
-BiRel(mqtt, temperature_sensor, "текущая температура", $tags = "Devices input/output")
+BiRel(movies_service, rabbit, " ", "JSON/HTTPS")
 
-Lay_U(kafka, video_service)
-Lay_R(telemetry_service, automation_service )
-Lay_R(automation_service, device_management_service)
-Lay_R(device_management_service, video_service)
-Lay_D(kafka,mqtt)
+BiRel(rabbit, recommender_system, " ", "JSON/HTTPS")
+
+Rel(api_gateway, analytics_service, "Отправка событий", "JSON/HTTPS")
+Rel(analytics_service, kafka, "действия пользователя", "JSON/HTTPS")
+BiRel_D(kafka, recommender_system, " ", "JSON/HTTPS")
 
 SHOW_LEGEND()
 
