@@ -1,0 +1,90 @@
+@startuml
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram for CinemaAbyss system
+
+AddElementTag("microService", $shape=EightSidedShape(), $bgColor="CornflowerBlue", $fontColor="white", $legendText="micro service\neight sided")
+AddElementTag("storage", $shape=RoundedBoxShape(), $bgColor="lightSkyBlue", $fontColor="white")
+AddRelTag("Kafka events", $textColor="darkgreen", $lineColor="darkgreen", $lineStyle = SolidLine())
+AddRelTag("Devices input/output", $textColor="brown", $lineColor="brown", $lineStyle = DashedLine())
+
+SHOW_PERSON_OUTLINE()
+
+Person(user, User, "Пользователь")
+
+System_Boundary(c1, "CinemaAbyss") {
+
+    Container(web_app, "Web-App", "Javascript, ReactJS", "Веб-приложение")
+    Container(mob_app, "Mob-App", "Android/IOS, java, Swift", "Мобильное приложение")
+    Container(tv_app, "TV-App", "Android, java", "Приложение на TV")
+
+    Container(api_gateway, "ApiGateway", "Go", "Шлюз, отвечающий за балансировку, аутентификацию и маршрутизацию")
+
+    'Container(auth_service, "Auth Service", "Go", "Аутентификация", $tags = "microService")
+
+    Container(users_service, "Users Service", "Go", "Регистрация пользователей, управление ролями", $tags = "microService")
+    ContainerDb(users_db, "Users DB", "PostgreSQL", "", $tags = "storage")
+    Rel_R(users_service, users_db, "read/write", "pq")
+
+    Container(loaylty_service, "Loaylty Service", "Go", "- Скидки, бонусы, подарки", $tags = "microService")
+    ContainerDb(loaylty_db, "Loaylty DB", "PostgreSQL", "", $tags = "storage")
+    Rel_L(loaylty_service, loaylty_db, "read/write", "pq")
+
+    Container(subscriptions_service, "Subscriptions Service", "Go", "- Управление подписками", $tags = "microService")
+    ContainerDb(subscriptions_db, "Subscriptions DB", "PostgreSQL", "", $tags = "storage")
+    Rel(subscriptions_service, subscriptions_db, "read/write", "pq")
+
+    Container(payments_service, "Payments Service", "Go", "- Управление платежами", $tags = "microService")
+    ContainerDb(payments_db, "Payments DB", "PostgreSQL", "", $tags = "storage")
+    Rel(payments_service, payments_db, "read/write", "pq")
+
+    Container(movies_service, "Movies Service", "Go", "- Метаданные о фильмах (жанры, актеры, оценки)", $tags = "microService")
+    ContainerDb(movies_db, "Movies DB", "PostgreSQL", "", $tags = "storage")
+    Rel(movies_service, movies_db, "read/write", "pq")
+
+    Container(analytics_service, "Analytics Service", "Go", "- Сбор данных о действиях пользователя", $tags = "microService")
+    ContainerDb(analytics_db, "Analytics DB", "ClickHouse", "", $tags = "storage")
+    Rel_R(analytics_service, analytics_db, "read/write", "pq")
+
+    ContainerQueue(rabbit, "RabbitMQ", "")
+    ContainerQueue(kafka, "kafka", "")
+}
+
+Container_Ext(payment_system, "Внешняя платежная система")
+Container_Ext(cinema_platform, "Онлайн-кинотеатры")
+Container_Ext(recommender_system, "Рекомендательная система")
+
+
+Rel_D(user, web_app, "Использует")
+Rel_D(user, mob_app, "Использует")
+Rel_D(user, tv_app, "Использует")
+
+Rel_D(web_app, api_gateway, "Отправляет запрос в платформу", "JSON/HTTPS")
+Rel_D(mob_app, api_gateway, "Отправляет запрос в платформу", "JSON/HTTPS")
+Rel_D(tv_app, api_gateway, "Отправляет запрос в платформу", "JSON/HTTPS")
+
+Rel_R(api_gateway, users_service, "Регистрация/обновление, получение информации", "JSON/HTTPS")
+Rel_L(api_gateway, loaylty_service, "Получение информации о скидках", "JSON/HTTPS")
+Rel(api_gateway, payments_service, "Оплата", "JSON/HTTPS")
+Rel(api_gateway, subscriptions_service, "Получение информации о подписках", "JSON/HTTPS")
+
+BiRel_U(payments_service, loaylty_service, "Проверка скидок", "JSON/HTTPS")
+BiRel_R(payments_service, subscriptions_service, "проверка/обновление подписок", "JSON/HTTPS")
+Rel_L(payments_service, payment_system, "uses", "JSON/HTTPS")
+
+Rel(api_gateway, movies_service, " ", "JSON/HTTPS")
+Rel_L(movies_service, subscriptions_service, "Проверка подписок", "JSON/HTTPS")
+Rel(movies_service, cinema_platform, " ", "JSON/HTTPS")
+
+BiRel(movies_service, rabbit, " ", "JSON/HTTPS")
+
+BiRel(rabbit, recommender_system, " ", "JSON/HTTPS")
+
+Rel(api_gateway, analytics_service, "Отправка событий", "JSON/HTTPS")
+Rel(analytics_service, kafka, "действия пользователя", "JSON/HTTPS")
+BiRel_D(kafka, recommender_system, " ", "JSON/HTTPS")
+
+SHOW_LEGEND()
+
+@enduml
